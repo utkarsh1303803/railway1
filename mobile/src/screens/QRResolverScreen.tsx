@@ -229,10 +229,17 @@ function ResultCard({ result, data, onRescan }: ResultCardProps) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function QRResolverScreen() {
-    const [permission, requestPermission] = Camera.useCameraPermissions();
+    const [hasPermission, setHasPermission] = useState<boolean | null>(null);
     const [scanned, setScanned] = useState(false);
     const [qrData, setQrData] = useState<QRData | null>(null);
     const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
+
+    useEffect(() => {
+        (async () => {
+            const { status } = await Camera.requestCameraPermissionsAsync();
+            setHasPermission(status === 'granted');
+        })();
+    }, []);
 
     const handleBarCodeScanned = ({ data }: BarCodeScanningResult) => {
         if (scanned) return;
@@ -260,9 +267,14 @@ export default function QRResolverScreen() {
         setVerifyResult(null);
     };
 
+    const requestPermission = async () => {
+        const { status } = await Camera.requestCameraPermissionsAsync();
+        setHasPermission(status === 'granted');
+    };
+
     // ── Permission states ────────────────────────────────────────────────────
 
-    if (!permission) {
+    if (hasPermission === null) {
         return (
             <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
                 <View style={styles.centered}>
@@ -272,7 +284,7 @@ export default function QRResolverScreen() {
         );
     }
 
-    if (!permission.granted) {
+    if (!hasPermission) {
         return (
             <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
                 <View style={styles.centered}>

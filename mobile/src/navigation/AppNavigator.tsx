@@ -8,11 +8,14 @@ import SosScreen from '../screens/SosScreen';
 import EvidenceScreen from '../screens/EvidenceScreen';
 import QRResolverScreen from '../screens/QRResolverScreen';
 
+import DashboardScreen from '../screens/DashboardScreen';
+
 export type RootStackParamList = {
     Home: undefined;
     SOS: undefined;
     Evidence: undefined;
     QRResolver: undefined;
+    Dashboard: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -59,6 +62,11 @@ export default function AppNavigator() {
                 <Stack.Screen
                     name="QRResolver"
                     component={QRResolverScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="Dashboard"
+                    component={DashboardScreen}
                     options={{ headerShown: false }}
                 />
             </Stack.Navigator>

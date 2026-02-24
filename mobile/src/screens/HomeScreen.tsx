@@ -48,10 +48,10 @@ const FEATURES: Feature[] = [
         color: '#00695C',
     },
     {
-        id: 'Home',
+        id: 'Dashboard',
         icon: '📊',
-        title: 'RPF Dashboard',
-        subtitle: 'Live alerts with escalation timer',
+        title: 'RPF DASHBOARD',
+        subtitle: 'LIVE ALERTS WITH ESCALATION TIMER',
         color: '#4527A0',
     },
 ];
@@ -60,7 +60,6 @@ export default function HomeScreen() {
     const navigation = useNavigation<Nav>();
 
     const handlePress = (id: keyof RootStackParamList) => {
-        if (id === 'Home') return; // Dashboard placeholder
         navigation.navigate(id as any);
     };
 
