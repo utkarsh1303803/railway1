@@ -8,10 +8,10 @@ import {
 } from 'react-native';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { collection, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { COLORS, SPACING } from '../constants/theme';
-import Animated, { FadeInUp, Layout } from 'react-native-reanimated';
+import Animated, { FadeInUp, Layout, FadeInDown } from 'react-native-reanimated';
 
 type Alert = {
     id: string;
@@ -111,6 +111,22 @@ export default function DashboardScreen() {
         return () => unsubscribe();
     }, []);
 
+    const triggerTest = async () => {
+        try {
+            await addDoc(collection(db, 'sos_alerts'), {
+                coach: 'B2',
+                seat: '42',
+                type: 'SOS',
+                category: 'medical_emergency',
+                priority: 'high',
+                status: 'pending',
+                timestamp: serverTimestamp(),
+            });
+        } catch (error) {
+            console.error('Failed to trigger test SOS:', error);
+        }
+    };
+
     return (
         <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
             <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
@@ -121,6 +137,13 @@ export default function DashboardScreen() {
                     <Text style={styles.topBarTitle}>RPF_DASHBOARD</Text>
                     <Text style={styles.topBarSub}>LIVE ALERT TERMINAL // STATION: NDLS</Text>
                 </View>
+                <TouchableOpacity
+                    style={styles.testBtn}
+                    onPress={triggerTest}
+                    activeOpacity={0.7}
+                >
+                    <Text style={styles.testBtnText}>+ TEST_SOS</Text>
+                </TouchableOpacity>
                 <View style={styles.alertCount}>
                     <Text style={styles.countNumber}>{alerts.length}</Text>
                     <Text style={styles.countLabel}>ACTIVE</Text>
@@ -171,6 +194,20 @@ const styles = StyleSheet.create({
     },
     topBarTitle: { color: COLORS.white, fontSize: 18, fontWeight: '900', letterSpacing: 1 },
     topBarSub: { color: COLORS.muted, fontSize: 10, fontWeight: '700', marginTop: 2 },
+
+    testBtn: {
+        backgroundColor: `${COLORS.accent}22`,
+        borderWidth: 1,
+        borderColor: COLORS.accent,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        marginHorizontal: 10,
+    },
+    testBtnText: {
+        color: COLORS.accent,
+        fontSize: 10,
+        fontWeight: '900',
+    },
 
     alertCount: {
         alignItems: 'center',
