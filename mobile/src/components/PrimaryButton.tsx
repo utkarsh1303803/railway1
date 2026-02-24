@@ -1,12 +1,12 @@
 import React from 'react';
 import {
-    TouchableOpacity,
     Text,
     ActivityIndicator,
     StyleSheet,
     ViewStyle,
     View,
 } from 'react-native';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,

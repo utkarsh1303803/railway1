@@ -4,9 +4,9 @@ import {
     Text,
     ScrollView,
     StyleSheet,
-    TouchableOpacity,
     StatusBar,
 } from 'react-native';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -60,6 +60,7 @@ export default function HomeScreen() {
     const navigation = useNavigation<Nav>();
 
     const handlePress = (id: keyof RootStackParamList) => {
+        console.log(`[HomeScreen] Navigating to: ${id}`);
         navigation.navigate(id as any);
     };
 

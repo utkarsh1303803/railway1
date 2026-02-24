@@ -2,13 +2,13 @@ import React, { useState, useRef } from 'react';
 import {
     View,
     Text,
-    TouchableOpacity,
     Modal,
     FlatList,
     StyleSheet,
     Dimensions,
     TouchableWithoutFeedback,
 } from 'react-native';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import Animated, {
     FadeIn,
     FadeOut,

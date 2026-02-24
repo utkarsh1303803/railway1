@@ -4,9 +4,9 @@ import {
     Text,
     StyleSheet,
     StatusBar,
-    TouchableOpacity,
     Dimensions,
 } from 'react-native';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera, BarCodeScanningResult } from 'expo-camera';
 import * as Haptics from 'expo-haptics';

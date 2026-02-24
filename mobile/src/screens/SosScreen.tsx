@@ -5,8 +5,8 @@ import {
     ScrollView,
     StyleSheet,
     StatusBar,
-    TouchableOpacity,
 } from 'react-native';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
     FadeIn,
