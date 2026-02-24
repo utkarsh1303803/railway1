@@ -34,6 +34,7 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+backend/target/
 
 # Logs
 *.log

@@ -5,23 +5,20 @@ import {
     ScrollView,
     StyleSheet,
     StatusBar,
+    TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
-    FadeInDown,
-    FadeOutDown,
     FadeIn,
     FadeOut,
+    FadeInDown,
     ZoomIn,
     useSharedValue,
     useAnimatedStyle,
-    withRepeat,
-    withSequence,
     withTiming,
-    withSpring,
     Easing,
 } from 'react-native-reanimated';
-import { COLORS, SPACING, RADIUS, SHADOW } from '../constants/theme';
+import { COLORS, SPACING } from '../constants/theme';
 import PrimaryButton from '../components/PrimaryButton';
 import Dropdown, { DropdownOption } from '../components/Dropdown';
 import { sendSOS } from '../services/api';
@@ -34,78 +31,21 @@ const COACH_OPTIONS: DropdownOption[] = [
 ].map((c) => ({ label: c, value: c }));
 
 const SEAT_OPTIONS: DropdownOption[] = Array.from({ length: 72 }, (_, i) => ({
-    label: `Seat ${i + 1}`,
+    label: `SEAT ${i + 1}`,
     value: String(i + 1),
 }));
 
 const INCIDENT_OPTIONS: DropdownOption[] = [
-    { label: '💰  Vendor Overpricing', value: 'vendor_overpricing' },
-    { label: '⚠️   Harassment', value: 'harassment' },
-    { label: '🏥  Medical Emergency', value: 'medical_emergency' },
-    { label: '🔓  Theft', value: 'theft' },
+    { label: 'VENDOR OVERPRICING', value: 'vendor_overpricing' },
+    { label: 'HARASSMENT', value: 'harassment' },
+    { label: 'MEDICAL EMERGENCY', value: 'medical_emergency' },
+    { label: 'THEFT', value: 'theft' },
 ];
 
 const getIncidentLabel = (v: string) =>
-    INCIDENT_OPTIONS.find((o) => o.value === v)?.label.replace(/^\S+\s+/, '') ?? v;
+    INCIDENT_OPTIONS.find((o) => o.value === v)?.label ?? v;
 
-// ─── Pulsing ring ─────────────────────────────────────────────────────────────
-
-function PulseRing({ color }: { color: string }) {
-    const scale = useSharedValue(1);
-    const opacity = useSharedValue(0.8);
-
-    useEffect(() => {
-        scale.value = withRepeat(
-            withSequence(
-                withTiming(1.7, { duration: 900, easing: Easing.out(Easing.ease) }),
-                withTiming(1, { duration: 0 }),
-            ),
-            -1,
-        );
-        opacity.value = withRepeat(
-            withSequence(
-                withTiming(0, { duration: 900, easing: Easing.out(Easing.ease) }),
-                withTiming(0.8, { duration: 0 }),
-            ),
-            -1,
-        );
-    }, []);
-
-    const style = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
-        opacity: opacity.value,
-    }));
-
-    return (
-        <Animated.View
-            style={[styles.pulseRing, { borderColor: color }, style]}
-        />
-    );
-}
-
-// ─── Animated check icon ─────────────────────────────────────────────────────
-
-function AnimatedCheck() {
-    const scale = useSharedValue(0);
-    const rotate = useSharedValue('-45deg');
-
-    useEffect(() => {
-        scale.value = withSpring(1, { damping: 12, stiffness: 200 });
-        rotate.value = withSpring('0deg', { damping: 14, stiffness: 180 });
-    }, []);
-
-    const iconStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }, { rotate: rotate.value }],
-    }));
-
-    return (
-        <Animated.View style={[styles.checkCircle, iconStyle]}>
-            <Text style={styles.checkMark}>✓</Text>
-        </Animated.View>
-    );
-}
-
-// ─── Countdown ring ───────────────────────────────────────────────────────────
+// ─── Industrial Components ───────────────────────────────────────────────────
 
 function CountdownBar({ duration }: { duration: number }) {
     const width = useSharedValue(100);
@@ -138,81 +78,53 @@ type SuccessProps = {
 function SuccessCard({ alertId, coach, seat, incident, countdown }: SuccessProps) {
     return (
         <Animated.View
-            entering={FadeIn.duration(350)}
-            exiting={FadeOut.duration(250)}
+            entering={FadeIn.duration(200)}
+            exiting={FadeOut.duration(200)}
             style={styles.successOverlay}
         >
-            <Animated.View
-                entering={ZoomIn.springify().damping(16).stiffness(260)}
-                style={styles.successCard}
-            >
-                {/* Icon */}
-                <View style={styles.iconOuter}>
-                    <PulseRing color={COLORS.success} />
-                    <AnimatedCheck />
+            <View style={styles.successContainer}>
+                <Animated.View
+                    entering={ZoomIn.duration(300)}
+                    style={styles.successHeader}
+                >
+                    <Text style={styles.successTitleText}>ALERT ACTIVE</Text>
+                    <Text style={styles.successIdText}>ID: {alertId.slice(-8).toUpperCase()}</Text>
+                </Animated.View>
+
+                <View style={styles.successBody}>
+                    <View style={styles.statusIndicator}>
+                        <View style={styles.statusDot} />
+                        <Text style={styles.statusText}>TRANSMISSION SUCCESSFUL</Text>
+                    </View>
+
+                    <View style={styles.dataGrid}>
+                        <View style={styles.gridRow}>
+                            <Text style={styles.gridLabel}>LOCATION</Text>
+                            <Text style={styles.gridValue}>{coach} / {seat}</Text>
+                        </View>
+                        <View style={styles.gridRow}>
+                            <Text style={styles.gridLabel}>CATEGORY</Text>
+                            <Text style={styles.gridValue}>{incident}</Text>
+                        </View>
+                        <View style={[styles.gridRow, { borderBottomWidth: 0 }]}>
+                            <Text style={styles.gridLabel}>RESPONDER</Text>
+                            <Text style={styles.gridValue}>RPF DISPATCHED</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.instructionBox}>
+                        <Text style={styles.instructionText}>
+                            SYSTEM IS MONITORING YOUR LOCATION.
+                            {"\n"}REMAIN CALM. HELP IS EN ROUTE.
+                        </Text>
+                    </View>
                 </View>
 
-                {/* Alert ID */}
-                <Animated.Text
-                    entering={FadeInDown.delay(200).springify()}
-                    style={styles.successAlertId}
-                >
-                    Alert #{alertId.slice(-6).toUpperCase()}
-                </Animated.Text>
-
-                <Animated.Text
-                    entering={FadeInDown.delay(280).springify()}
-                    style={styles.successSentLabel}
-                >
-                    SENT TO RPF / GRP
-                </Animated.Text>
-
-                <Animated.Text
-                    entering={FadeInDown.delay(340).springify()}
-                    style={styles.successSub}
-                >
-                    Help is being dispatched.{'\n'}Stay calm and stay visible.
-                </Animated.Text>
-
-                {/* Detail rows */}
-                <Animated.View
-                    entering={FadeInDown.delay(420).springify()}
-                    style={styles.detailCard}
-                >
-                    {[
-                        { label: 'Coach', value: coach },
-                        { label: 'Seat', value: seat },
-                        { label: 'Incident', value: incident },
-                        { label: 'Status', value: 'Pending ✓' },
-                    ].map((row, i) => (
-                        <View
-                            key={row.label}
-                            style={[styles.detailRow, i < 3 && styles.detailBorder]}
-                        >
-                            <Text style={styles.detailLabel}>{row.label}</Text>
-                            <Text
-                                style={[
-                                    styles.detailValue,
-                                    row.label === 'Status' && { color: COLORS.success },
-                                ]}
-                            >
-                                {row.value}
-                            </Text>
-                        </View>
-                    ))}
-                </Animated.View>
-
-                {/* Auto-reset countdown */}
-                <Animated.View
-                    entering={FadeInDown.delay(550).springify()}
-                    style={styles.countdownSection}
-                >
-                    <Text style={styles.countdownLabel}>
-                        Form resets in {countdown}s
-                    </Text>
+                <View style={styles.successFooter}>
+                    <Text style={styles.resetText}>AUTO-RESET IN {countdown}S</Text>
                     <CountdownBar duration={3000} />
-                </Animated.View>
-            </Animated.View>
+                </View>
+            </View>
         </Animated.View>
     );
 }
@@ -230,19 +142,12 @@ export default function SosScreen() {
     } | null>(null);
     const [countdown, setCountdown] = useState(3);
 
-    // Auto-reset after 3 s when success card is shown
     useEffect(() => {
         if (!alertData) return;
 
         setCountdown(3);
         const tick = setInterval(() => {
-            setCountdown((c) => {
-                if (c <= 1) {
-                    clearInterval(tick);
-                    return 0;
-                }
-                return c - 1;
-            });
+            setCountdown((c) => (c <= 1 ? 0 : c - 1));
         }, 1000);
 
         const reset = setTimeout(() => {
@@ -260,9 +165,9 @@ export default function SosScreen() {
     }, [alertData]);
 
     const validate = () => {
-        if (!coach) { setErrorMsg('Please select a coach.'); return false; }
-        if (!seat) { setErrorMsg('Please select a seat number.'); return false; }
-        if (!incident) { setErrorMsg('Please select the incident type.'); return false; }
+        if (!coach) { setErrorMsg('REQUIRED: COACH NUMBER'); return false; }
+        if (!seat) { setErrorMsg('REQUIRED: SEAT NUMBER'); return false; }
+        if (!incident) { setErrorMsg('REQUIRED: INCIDENT TYPE'); return false; }
         setErrorMsg('');
         return true;
     };
@@ -285,7 +190,7 @@ export default function SosScreen() {
                 incident: getIncidentLabel(incident),
             });
         } catch (err) {
-            setErrorMsg('Failed to send alert. Please check your connection.');
+            setErrorMsg('LINK FAILURE: CHECK NETWORK CONNECTION');
             console.error(err);
         } finally {
             setLoading(false);
@@ -293,8 +198,14 @@ export default function SosScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.safe} edges={['bottom']}>
+        <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
             <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
+
+            {/* Top Bar */}
+            <View style={styles.topBar}>
+                <Text style={styles.systemTime}>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</Text>
+                <Text style={styles.moduleName}>EMERGENCY_MODULE_V1</Text>
+            </View>
 
             <ScrollView
                 style={styles.scroll}
@@ -302,81 +213,88 @@ export default function SosScreen() {
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                {/* Header */}
-                <Animated.View entering={FadeInDown.delay(60).springify()} style={styles.header}>
-                    <View style={styles.headerIconWrap}>
-                        <Text style={styles.headerIcon}>🚨</Text>
+                {/* Header Information */}
+                <View style={styles.headerInfo}>
+                    <Text style={styles.mainHeading}>SOS_SILENT_DISPATCH</Text>
+                    <Text style={styles.subHeading}>
+                        ENCRYPTED LINK TO RAILWAY PROTECTION FORCE (RPF).
+                        {"\n"}AUTOMATIC TRACKING ENABLED.
+                    </Text>
+                </View>
+
+                {/* Hazard Banner */}
+                <View style={styles.hazardBanner}>
+                    <View style={styles.hazardStrip} />
+                    <View style={styles.hazardContent}>
+                        <Text style={styles.hazardTitle}>WARNING: EMERGENCY USE ONLY</Text>
+                        <Text style={styles.hazardSub}>MISUSE IS SUBJECT TO IPC SECTION 182</Text>
                     </View>
-                    <Text style={styles.headerTitle}>Emergency Alert</Text>
-                    <Text style={styles.headerSub}>
-                        Your alert is sent silently to RPF and GRP.{'\n'}
-                        Misuse is punishable under IPC Section 182.
-                    </Text>
-                </Animated.View>
+                    <View style={styles.hazardStrip} />
+                </View>
 
-                {/* Warning */}
-                <Animated.View entering={FadeInDown.delay(140).springify()} style={styles.warningBanner}>
-                    <Text style={styles.warningIcon}>⚠️</Text>
-                    <Text style={styles.warningText}>Only use in genuine emergencies.</Text>
-                </Animated.View>
+                {/* Data Input Grid */}
+                <View style={styles.inputGrid}>
+                    <View style={styles.row}>
+                        <View style={styles.col}>
+                            <Dropdown
+                                label="COACH"
+                                placeholder="VAL_"
+                                options={COACH_OPTIONS}
+                                value={coach}
+                                onChange={setCoach}
+                            />
+                        </View>
+                        <View style={styles.col}>
+                            <Dropdown
+                                label="SEAT"
+                                placeholder="VAL_"
+                                options={SEAT_OPTIONS}
+                                value={seat}
+                                onChange={setSeat}
+                            />
+                        </View>
+                    </View>
 
-                {/* Form */}
-                <Animated.View entering={FadeInDown.delay(220).springify()} style={styles.formCard}>
-                    <Dropdown
-                        label="Coach Number"
-                        placeholder="Select coach..."
-                        options={COACH_OPTIONS}
-                        value={coach}
-                        onChange={setCoach}
-                    />
-                    <Dropdown
-                        label="Seat Number"
-                        placeholder="Select seat..."
-                        options={SEAT_OPTIONS}
-                        value={seat}
-                        onChange={setSeat}
-                    />
-                    <Dropdown
-                        label="Incident Type"
-                        placeholder="Select incident type..."
-                        options={INCIDENT_OPTIONS}
-                        value={incident}
-                        onChange={setIncident}
-                    />
-                </Animated.View>
+                    <View style={styles.fullCol}>
+                        <Dropdown
+                            label="INCIDENT_CATEGORY"
+                            placeholder="SELECT_CATEGORY..."
+                            options={INCIDENT_OPTIONS}
+                            value={incident}
+                            onChange={setIncident}
+                        />
+                    </View>
+                </View>
 
-                {/* Validation error */}
+                {/* Error Display */}
                 {errorMsg ? (
-                    <Animated.View
-                        entering={FadeInDown.springify()}
-                        exiting={FadeOutDown.duration(200)}
-                        style={styles.errorBox}
-                    >
-                        <Text style={styles.errorIcon}>✕</Text>
-                        <Text style={styles.errorText}>{errorMsg}</Text>
+                    <Animated.View entering={FadeInDown} style={styles.errorBanner}>
+                        <Text style={styles.errorText}>[ ERROR: {errorMsg} ]</Text>
                     </Animated.View>
-                ) : null}
+                ) : (
+                    <View style={styles.idleSpacer} />
+                )}
 
-                {/* CTA */}
-                <Animated.View entering={FadeInDown.delay(300).springify()}>
-                    <PrimaryButton
-                        title={loading ? 'Sending...' : '🚨   SEND ALERT'}
-                        onPress={handleSend}
-                        variant="danger"
-                        loading={loading}
-                        style={styles.ctaBtn}
-                    />
-                </Animated.View>
-
-                <Animated.View entering={FadeInDown.delay(400).springify()}>
-                    <Text style={styles.disclaimer}>
-                        Alert is timestamped and geo-tagged automatically.{'\n'}
-                        Response time target: under 5 minutes.
+                {/* Dispatch Button */}
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={handleSend}
+                    disabled={loading}
+                    style={[styles.dispatchBtn, loading && styles.btnLoading]}
+                >
+                    <Text style={styles.btnText}>
+                        {loading ? "INITIALIZING..." : "SEND_SOS_ALERT"}
                     </Text>
-                </Animated.View>
+                    {!loading && <View style={styles.btnSubBorder} />}
+                </TouchableOpacity>
+
+                <View style={styles.footerData}>
+                    <Text style={styles.footerText}>GEOTAG: ENABLED</Text>
+                    <Text style={styles.footerText}>SIGNAL_STRENGTH: OPTIMAL</Text>
+                </View>
             </ScrollView>
 
-            {/* Success overlay — rendered above scroll content */}
+            {/* Success State */}
             {alertData && (
                 <SuccessCard
                     alertId={alertData.id}
@@ -390,185 +308,229 @@ export default function SosScreen() {
     );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: COLORS.bg },
-    scroll: { flex: 1 },
-    content: { padding: SPACING.lg, paddingBottom: 56 },
-
-    header: { alignItems: 'center', marginBottom: SPACING.lg, paddingTop: SPACING.sm },
-    headerIconWrap: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
-        backgroundColor: `${COLORS.accent}22`,
-        borderWidth: 2,
-        borderColor: `${COLORS.accent}88`,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: SPACING.md,
-    },
-    headerIcon: { fontSize: 34 },
-    headerTitle: {
-        color: COLORS.white,
-        fontSize: 26,
-        fontWeight: '800',
-        letterSpacing: -0.3,
-        marginBottom: SPACING.sm,
-    },
-    headerSub: { color: COLORS.muted, fontSize: 13, textAlign: 'center', lineHeight: 20 },
-
-    warningBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        backgroundColor: `${COLORS.warning}14`,
-        borderWidth: 1,
-        borderColor: `${COLORS.warning}55`,
-        borderRadius: RADIUS.md,
-        padding: SPACING.md,
-        marginBottom: SPACING.lg,
-    },
-    warningIcon: { fontSize: 16 },
-    warningText: { color: COLORS.warning, fontSize: 13, fontWeight: '600', flex: 1 },
-
-    formCard: {
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.lg,
-        padding: SPACING.lg,
-        marginBottom: SPACING.lg,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        ...SHADOW.card,
-    },
-
-    errorBox: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        backgroundColor: `${COLORS.accent}18`,
-        borderWidth: 1,
-        borderColor: `${COLORS.accent}66`,
-        borderRadius: RADIUS.md,
-        padding: SPACING.md,
-        marginBottom: SPACING.md,
-    },
-    errorIcon: { color: COLORS.accent, fontSize: 14, fontWeight: '800' },
-    errorText: { color: COLORS.accent, fontSize: 13, fontWeight: '600', flex: 1 },
-
-    ctaBtn: { minHeight: 60 },
-    disclaimer: {
-        color: COLORS.muted,
-        fontSize: 12,
-        textAlign: 'center',
-        marginTop: SPACING.md,
-        lineHeight: 19,
-    },
-
-    // ── Success overlay ───────────────────────────────────────
-    successOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: `${COLORS.bg}EE`,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: SPACING.lg,
-    },
-    successCard: {
-        width: '100%',
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.xl,
-        padding: SPACING.xl,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: `${COLORS.success}44`,
-        ...SHADOW.card,
-    },
-
-    // Check icon
-    iconOuter: {
-        width: 100,
-        height: 100,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: SPACING.lg,
-    },
-    pulseRing: {
-        position: 'absolute',
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        borderWidth: 2,
-    },
-    checkCircle: {
-        width: 68,
-        height: 68,
-        borderRadius: 34,
-        backgroundColor: `${COLORS.success}22`,
-        borderWidth: 2,
-        borderColor: COLORS.success,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    checkMark: {
-        color: COLORS.success,
-        fontSize: 32,
-        fontWeight: '800',
-    },
-
-    successAlertId: {
-        color: COLORS.success,
-        fontSize: 26,
-        fontWeight: '900',
-        letterSpacing: 0.5,
-        marginBottom: 4,
-    },
-    successSentLabel: {
-        color: COLORS.white,
-        fontSize: 12,
-        fontWeight: '800',
-        letterSpacing: 3,
-        marginBottom: SPACING.md,
-    },
-    successSub: {
-        color: COLORS.muted,
-        fontSize: 13,
-        textAlign: 'center',
-        lineHeight: 20,
-        marginBottom: SPACING.lg,
-    },
-
-    detailCard: {
-        width: '100%',
-        backgroundColor: COLORS.bg,
-        borderRadius: RADIUS.md,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        marginBottom: SPACING.lg,
-    },
-    detailRow: {
+    topBar: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingVertical: 12,
         paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.xs,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+        backgroundColor: COLORS.surface,
     },
-    detailBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
-    detailLabel: { color: COLORS.muted, fontSize: 13 },
-    detailValue: { color: COLORS.white, fontSize: 13, fontWeight: '700' },
+    systemTime: { color: COLORS.muted, fontSize: 10, fontWeight: '900' },
+    moduleName: { color: COLORS.muted, fontSize: 10, fontWeight: '900' },
 
-    // Countdown
-    countdownSection: { width: '100%', alignItems: 'center', gap: 8 },
-    countdownLabel: { color: COLORS.muted, fontSize: 12 },
-    countdownTrack: {
-        width: '100%',
-        height: 3,
-        backgroundColor: COLORS.border,
-        borderRadius: 2,
+    scroll: { flex: 1 },
+    content: { padding: SPACING.md, paddingTop: SPACING.lg },
+
+    headerInfo: { marginBottom: SPACING.xl },
+    mainHeading: {
+        color: COLORS.white,
+        fontSize: 32,
+        fontWeight: '900',
+        letterSpacing: -1,
+    },
+    subHeading: {
+        color: COLORS.muted,
+        fontSize: 12,
+        fontWeight: '600',
+        lineHeight: 18,
+        marginTop: 4,
+    },
+
+    hazardBanner: {
+        backgroundColor: COLORS.warning,
+        flexDirection: 'row',
+        height: 60,
+        marginBottom: SPACING.xl,
         overflow: 'hidden',
     },
-    countdownFill: {
-        height: 3,
+    hazardStrip: {
+        width: 12,
+        backgroundColor: '#000',
+        transform: [{ skewX: '-20deg' }],
+        marginHorizontal: 4,
+        opacity: 0.1,
+    },
+    hazardContent: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    hazardTitle: {
+        color: '#000',
+        fontSize: 14,
+        fontWeight: '900',
+    },
+    hazardSub: {
+        color: '#000',
+        fontSize: 10,
+        fontWeight: '700',
+        opacity: 0.8,
+    },
+
+    inputGrid: {
+        gap: SPACING.md,
+        marginBottom: SPACING.lg,
+    },
+    row: {
+        flexDirection: 'row',
+        gap: SPACING.md,
+    },
+    col: { flex: 1 },
+    fullCol: { width: '100%' },
+
+    errorBanner: {
+        backgroundColor: `${COLORS.accent}22`,
+        padding: SPACING.md,
+        borderWidth: 1,
+        borderColor: COLORS.accent,
+        marginBottom: SPACING.lg,
+    },
+    errorText: {
+        color: COLORS.accent,
+        fontSize: 12,
+        fontWeight: '900',
+        textAlign: 'center',
+    },
+    idleSpacer: { height: 20 },
+
+    dispatchBtn: {
+        backgroundColor: COLORS.accent,
+        height: 80,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: COLORS.white,
+    },
+    btnLoading: { backgroundColor: COLORS.muted },
+    btnText: {
+        color: COLORS.white,
+        fontSize: 24,
+        fontWeight: '900',
+        letterSpacing: 2,
+    },
+    btnSubBorder: {
+        position: 'absolute',
+        bottom: 8,
+        width: '40%',
+        height: 4,
+        backgroundColor: 'rgba(255,255,255,0.3)',
+    },
+
+    footerData: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: SPACING.xl,
+    },
+    footerText: {
+        color: COLORS.muted,
+        fontSize: 10,
+        fontWeight: '800',
+    },
+
+    // ── Success State ───────────────────────────────────────
+    successOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(10, 25, 47, 0.98)',
+        justifyContent: 'center',
+        padding: SPACING.lg,
+    },
+    successContainer: {
+        backgroundColor: COLORS.surface,
+        borderWidth: 2,
+        borderColor: COLORS.success,
+    },
+    successHeader: {
         backgroundColor: COLORS.success,
-        borderRadius: 2,
+        padding: SPACING.md,
+        alignItems: 'center',
+    },
+    successTitleText: {
+        color: '#000',
+        fontSize: 20,
+        fontWeight: '900',
+    },
+    successIdText: {
+        color: '#000',
+        fontSize: 10,
+        fontWeight: '700',
+        opacity: 0.8,
+    },
+    successBody: {
+        padding: SPACING.lg,
+    },
+    statusIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: SPACING.lg,
+    },
+    statusDot: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: COLORS.success,
+    },
+    statusText: {
+        color: COLORS.success,
+        fontSize: 12,
+        fontWeight: '900',
+    },
+    dataGrid: {
+        gap: 12,
+        marginBottom: SPACING.xl,
+    },
+    gridRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+        paddingBottom: 8,
+    },
+    gridLabel: {
+        color: COLORS.muted,
+        fontSize: 11,
+        fontWeight: '700',
+    },
+    gridValue: {
+        color: COLORS.white,
+        fontSize: 13,
+        fontWeight: '800',
+    },
+    instructionBox: {
+        backgroundColor: `${COLORS.success}11`,
+        padding: SPACING.md,
+        borderLeftWidth: 4,
+        borderLeftColor: COLORS.success,
+    },
+    instructionText: {
+        color: COLORS.white,
+        fontSize: 12,
+        fontWeight: '700',
+        lineHeight: 18,
+    },
+    successFooter: {
+        padding: SPACING.md,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border,
+    },
+    resetText: {
+        color: COLORS.muted,
+        fontSize: 10,
+        fontWeight: '800',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    countdownTrack: {
+        width: '100%',
+        height: 6,
+        backgroundColor: COLORS.border,
+    },
+    countdownFill: {
+        height: 6,
+        backgroundColor: COLORS.success,
     },
 });

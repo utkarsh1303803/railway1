@@ -6,13 +6,11 @@ import {
     StyleSheet,
     TouchableOpacity,
     StatusBar,
-    Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SPACING, RADIUS, SHADOW } from '../constants/theme';
+import { COLORS, SPACING } from '../constants/theme';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type Nav = StackNavigationProp<RootStackParamList, 'Home'>;
@@ -67,171 +65,232 @@ export default function HomeScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.safe} edges={['bottom']}>
+        <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
             <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
+
+            {/* System Header */}
+            <View style={styles.systemHeader}>
+                <View>
+                    <Text style={styles.systemTitle}>RAILRAKSHAK</Text>
+                    <Text style={styles.systemSub}>RAILWAY SAFETY CONTROL SYSTEM</Text>
+                </View>
+                <View style={styles.liveIndicator}>
+                    <View style={styles.liveDot} />
+                    <Text style={styles.liveText}>LIVE</Text>
+                </View>
+            </View>
+
+            {/* Status Strip */}
+            <View style={styles.statusStrip}>
+                <Text style={styles.statusItem}>RPF_LINK: ACTIVE</Text>
+                <Text style={styles.statusSep}>|</Text>
+                <Text style={styles.statusItem}>ENCRYPTION: AES-256</Text>
+                <Text style={styles.statusSep}>|</Text>
+                <Text style={styles.statusItem}>GPS: LOCKED</Text>
+            </View>
+
             <ScrollView
                 style={styles.scroll}
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Header */}
-                <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
-                    <View style={styles.badge}>
-                        <Text style={styles.badgeText}>🛡️ Indian Railways Safety App</Text>
-                    </View>
-                    <Text style={styles.title}>RailRakshak</Text>
-                    <Text style={styles.subtitle}>
-                        Your silent guardian on every journey.{'\n'}Report. Resolve. Stay Safe.
-                    </Text>
-                </Animated.View>
+                {/* Module Grid */}
+                {FEATURES.map((feat, idx) => (
+                    <TouchableOpacity
+                        key={feat.id + idx}
+                        style={[
+                            styles.moduleCard,
+                            feat.danger && styles.dangerCard,
+                        ]}
+                        onPress={() => handlePress(feat.id)}
+                        activeOpacity={0.85}
+                    >
+                        {/* Left accent bar */}
+                        <View style={[styles.accentBar, { backgroundColor: feat.color }]} />
 
-                {/* Status bar */}
-                <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.statusBar}>
-                    <View style={styles.statusDot} />
-                    <Text style={styles.statusText}>System Active · RPF Connected</Text>
-                </Animated.View>
-
-                {/* Feature grid */}
-                <View style={styles.grid}>
-                    {FEATURES.map((feat, idx) => (
-                        <Animated.View
-                            key={feat.id + idx}
-                            entering={FadeInDown.delay(300 + idx * 100).springify()}
-                            style={[styles.cardWrapper, feat.danger && styles.cardDanger]}
-                        >
-                            <TouchableOpacity
-                                style={[styles.card, { borderTopColor: feat.color }]}
-                                onPress={() => handlePress(feat.id)}
-                                activeOpacity={0.8}
-                            >
-                                <View style={[styles.iconCircle, { backgroundColor: `${feat.color}22` }]}>
-                                    <Text style={styles.icon}>{feat.icon}</Text>
+                        <View style={styles.moduleBody}>
+                            {/* Top row: icon + title */}
+                            <View style={styles.moduleTop}>
+                                <Text style={styles.moduleIcon}>{feat.icon}</Text>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.moduleTitle}>{feat.title.toUpperCase()}</Text>
+                                    <Text style={styles.moduleSubtitle}>{feat.subtitle.toUpperCase()}</Text>
                                 </View>
-                                <Text style={styles.cardTitle}>{feat.title}</Text>
-                                <Text style={styles.cardSubtitle}>{feat.subtitle}</Text>
                                 {feat.danger && (
-                                    <View style={styles.urgentBadge}>
-                                        <Text style={styles.urgentText}>EMERGENCY</Text>
+                                    <View style={styles.emergencyTag}>
+                                        <Text style={styles.emergencyTagText}>CRITICAL</Text>
                                     </View>
                                 )}
-                            </TouchableOpacity>
-                        </Animated.View>
-                    ))}
-                </View>
+                            </View>
+                        </View>
 
-                {/* Footer */}
-                <Animated.View entering={FadeInDown.delay(750).springify()} style={styles.footer}>
-                    <Text style={styles.footerText}>
-                        Developed for Indian Railways · MoR Hackathon 2025
-                    </Text>
-                </Animated.View>
+                        {/* Right arrow indicator */}
+                        <View style={styles.arrowWrap}>
+                            <Text style={[styles.arrowText, { color: feat.color }]}>▶</Text>
+                        </View>
+                    </TouchableOpacity>
+                ))}
             </ScrollView>
+
+            {/* Footer */}
+            <View style={styles.footer}>
+                <Text style={styles.footerText}>
+                    INDIAN RAILWAYS · MINISTRY OF RAILWAYS · HACKATHON 2025
+                </Text>
+            </View>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: COLORS.bg },
-    scroll: { flex: 1 },
-    content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
 
-    header: { marginBottom: SPACING.lg, alignItems: 'center' },
-    badge: {
-        backgroundColor: `${COLORS.primary}33`,
-        borderWidth: 1,
-        borderColor: COLORS.primary,
-        borderRadius: 20,
-        paddingVertical: 6,
-        paddingHorizontal: 16,
-        marginBottom: SPACING.md,
+    systemHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.md,
+        borderBottomWidth: 2,
+        borderBottomColor: COLORS.border,
+        backgroundColor: COLORS.surface,
     },
-    badgeText: { color: COLORS.primary, fontSize: 12, fontWeight: '600', letterSpacing: 1 },
-    title: {
+    systemTitle: {
         color: COLORS.white,
-        fontSize: 36,
-        fontWeight: '800',
-        letterSpacing: -0.5,
-        textAlign: 'center',
+        fontSize: 24,
+        fontWeight: '900',
+        letterSpacing: 2,
     },
-    subtitle: {
+    systemSub: {
         color: COLORS.muted,
-        fontSize: 14,
-        textAlign: 'center',
-        lineHeight: 22,
-        marginTop: SPACING.sm,
+        fontSize: 10,
+        fontWeight: '700',
+        marginTop: 2,
     },
-
-    statusBar: {
+    liveIndicator: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        backgroundColor: `${COLORS.success}18`,
+        gap: 6,
+        backgroundColor: `${COLORS.success}22`,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
         borderWidth: 1,
-        borderColor: `${COLORS.success}44`,
-        borderRadius: RADIUS.md,
-        paddingVertical: 10,
-        paddingHorizontal: SPACING.md,
-        marginBottom: SPACING.xl,
+        borderColor: COLORS.success,
     },
-    statusDot: {
+    liveDot: {
         width: 8,
         height: 8,
         borderRadius: 4,
         backgroundColor: COLORS.success,
     },
-    statusText: { color: COLORS.success, fontSize: 13, fontWeight: '600' },
+    liveText: {
+        color: COLORS.success,
+        fontSize: 11,
+        fontWeight: '900',
+    },
 
-    grid: { gap: SPACING.md },
-    cardWrapper: { borderRadius: RADIUS.lg, ...SHADOW.card },
-    cardDanger: {
-        shadowColor: COLORS.accent,
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-        elevation: 12,
-    },
-    card: {
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.lg,
-        padding: SPACING.lg,
-        borderTopWidth: 3,
-        borderColor: COLORS.border,
-    },
-    iconCircle: {
-        width: 52,
-        height: 52,
-        borderRadius: 26,
-        alignItems: 'center',
+    statusStrip: {
+        flexDirection: 'row',
         justifyContent: 'center',
-        marginBottom: SPACING.md,
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: COLORS.bg,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+        paddingVertical: 6,
     },
-    icon: { fontSize: 24 },
-    cardTitle: {
-        color: COLORS.white,
-        fontSize: 18,
-        fontWeight: '700',
-        marginBottom: 4,
-    },
-    cardSubtitle: {
+    statusItem: {
         color: COLORS.muted,
-        fontSize: 13,
-        lineHeight: 18,
-    },
-    urgentBadge: {
-        alignSelf: 'flex-start',
-        backgroundColor: `${COLORS.accent}22`,
-        borderWidth: 1,
-        borderColor: COLORS.accent,
-        borderRadius: 8,
-        paddingVertical: 3,
-        paddingHorizontal: 10,
-        marginTop: SPACING.sm,
-    },
-    urgentText: {
-        color: COLORS.accent,
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: '800',
-        letterSpacing: 1.5,
     },
-    footer: { alignItems: 'center', marginTop: SPACING.xl },
-    footerText: { color: COLORS.muted, fontSize: 12, textAlign: 'center' },
+    statusSep: {
+        color: COLORS.border,
+        fontSize: 9,
+    },
+
+    scroll: { flex: 1 },
+    content: {
+        padding: SPACING.md,
+        paddingTop: SPACING.lg,
+        gap: SPACING.md,
+    },
+
+    moduleCard: {
+        flexDirection: 'row',
+        backgroundColor: COLORS.surface,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        minHeight: 100,
+        overflow: 'hidden',
+    },
+    dangerCard: {
+        borderColor: COLORS.accent,
+        borderWidth: 2,
+    },
+    accentBar: {
+        width: 6,
+    },
+    moduleBody: {
+        flex: 1,
+        paddingVertical: SPACING.md,
+        paddingHorizontal: SPACING.md,
+        justifyContent: 'center',
+    },
+    moduleTop: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    moduleIcon: {
+        fontSize: 28,
+    },
+    moduleTitle: {
+        color: COLORS.white,
+        fontSize: 16,
+        fontWeight: '900',
+        letterSpacing: 0.5,
+    },
+    moduleSubtitle: {
+        color: COLORS.muted,
+        fontSize: 10,
+        fontWeight: '600',
+        marginTop: 2,
+    },
+    emergencyTag: {
+        backgroundColor: COLORS.accent,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+    },
+    emergencyTagText: {
+        color: COLORS.white,
+        fontSize: 9,
+        fontWeight: '900',
+        letterSpacing: 1,
+    },
+    arrowWrap: {
+        width: 48,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderLeftWidth: 1,
+        borderLeftColor: COLORS.border,
+    },
+    arrowText: {
+        fontSize: 16,
+        fontWeight: '900',
+    },
+
+    footer: {
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border,
+        paddingVertical: SPACING.sm,
+        alignItems: 'center',
+        backgroundColor: COLORS.surface,
+    },
+    footerText: {
+        color: COLORS.muted,
+        fontSize: 9,
+        fontWeight: '700',
+        letterSpacing: 1,
+    },
 });

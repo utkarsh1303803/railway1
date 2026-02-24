@@ -27,7 +27,7 @@ import Animated, {
     Easing,
     runOnJS,
 } from 'react-native-reanimated';
-import { COLORS, SPACING, RADIUS, SHADOW } from '../constants/theme';
+import { COLORS, SPACING } from '../constants/theme';
 import PrimaryButton from '../components/PrimaryButton';
 
 const { width: SW } = Dimensions.get('window');
@@ -54,11 +54,9 @@ function Toast({ message, onDone }: ToastProps) {
     const opacity = useSharedValue(0);
 
     useEffect(() => {
-        // Slide in
         translateY.value = withSpring(0, { damping: 18, stiffness: 300 });
         opacity.value = withTiming(1, { duration: 250 });
 
-        // Auto dismiss after 2.5 s
         const t = setTimeout(() => {
             translateY.value = withTiming(-80, { duration: 300, easing: Easing.in(Easing.ease) });
             opacity.value = withTiming(0, { duration: 280 }, (done) => {
@@ -110,7 +108,6 @@ function CameraSheetBody({ category, onClose }: SheetBodyProps) {
             if (photo?.uri) setPhotoUri(photo.uri);
             setPhase('preview');
         } catch {
-            // Fallback for simulators — use placeholder
             setPhase('preview');
         }
     };
@@ -122,7 +119,6 @@ function CameraSheetBody({ category, onClose }: SheetBodyProps) {
 
     const handleSubmit = () => {
         setPhase('submitting');
-        // Caller handles toast + close
         setTimeout(onClose, 300);
     };
 
@@ -131,16 +127,17 @@ function CameraSheetBody({ category, onClose }: SheetBodyProps) {
         setHasPermission(status === 'granted');
     };
 
-    // Permission not yet determined or denied
     if (!hasPermission) {
         return (
             <View style={styles.permBox}>
                 <Text style={styles.permIcon}>📷</Text>
-                <Text style={styles.permTitle}>Camera Access Required</Text>
-                <Text style={styles.permSub}>Grant camera permission to capture evidence.</Text>
-                <PrimaryButton title="Grant Permission" onPress={requestPermission} style={{ marginTop: SPACING.lg }} />
+                <Text style={styles.permTitle}>CAMERA ACCESS REQUIRED</Text>
+                <Text style={styles.permSub}>GRANT PERMISSION TO CAPTURE EVIDENCE.</Text>
+                <TouchableOpacity onPress={requestPermission} style={styles.permBtn}>
+                    <Text style={styles.permBtnText}>GRANT_PERMISSION</Text>
+                </TouchableOpacity>
                 <TouchableOpacity onPress={onClose} style={styles.permCancel}>
-                    <Text style={styles.permCancelText}>Cancel</Text>
+                    <Text style={styles.permCancelText}>CANCEL</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -148,10 +145,10 @@ function CameraSheetBody({ category, onClose }: SheetBodyProps) {
 
     return (
         <View style={styles.sheetBody}>
-            {/* Category chip */}
-            <View style={[styles.catChip, { borderColor: category.color, backgroundColor: `${category.color}18` }]}>
-                <Text style={styles.catChipIcon}>{category.icon}</Text>
-                <Text style={[styles.catChipText, { color: category.color }]}>{category.label}</Text>
+            {/* Category indicator */}
+            <View style={[styles.catTag, { borderLeftColor: category.color }]}>
+                <Text style={styles.catTagIcon}>{category.icon}</Text>
+                <Text style={styles.catTagText}>{category.label.toUpperCase()}</Text>
             </View>
 
             {/* ── CAMERA phase ── */}
@@ -165,54 +162,50 @@ function CameraSheetBody({ category, onClose }: SheetBodyProps) {
                         {flashVisible && <View style={styles.captureFlash} />}
                     </Camera>
 
-                    <Animated.View entering={FadeInDown.delay(80).springify()} style={styles.captureRow}>
-                        <Text style={styles.cameraHint}>Point at evidence and tap capture</Text>
+                    <View style={styles.captureRow}>
+                        <Text style={styles.cameraHint}>POINT AT EVIDENCE — TAP CAPTURE</Text>
                         <TouchableOpacity style={styles.captureBtn} onPress={handleCapture} activeOpacity={0.8}>
                             <View style={styles.captureInner} />
                         </TouchableOpacity>
-                    </Animated.View>
+                    </View>
                 </Animated.View>
             )}
 
             {/* ── PREVIEW phase ── */}
             {phase === 'preview' && (
                 <Animated.View entering={FadeIn.duration(280)} style={styles.previewSection}>
-                    {/* Image preview */}
                     <View style={styles.previewWrap}>
                         {photoUri ? (
                             <Image source={{ uri: photoUri }} style={styles.previewImage} resizeMode="cover" />
                         ) : (
-                            /* Simulator fallback placeholder */
                             <View style={[styles.previewImage, styles.previewPlaceholder]}>
                                 <Text style={styles.previewPlaceholderIcon}>📷</Text>
-                                <Text style={styles.previewPlaceholderText}>Photo captured</Text>
+                                <Text style={styles.previewPlaceholderText}>PHOTO CAPTURED</Text>
                             </View>
                         )}
 
-                        {/* Overlay badge */}
                         <Animated.View entering={ZoomIn.delay(150).springify()} style={styles.capturedBadge}>
-                            <Text style={styles.capturedBadgeText}>✓  Photo Ready</Text>
+                            <Text style={styles.capturedBadgeText}>✓ READY</Text>
                         </Animated.View>
                     </View>
 
-                    {/* Buttons */}
-                    <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.previewBtns}>
+                    <View style={styles.previewBtns}>
                         <PrimaryButton
-                            title="↩  Retake"
+                            title="↩  RETAKE"
                             onPress={handleRetake}
                             variant="primary"
                             style={styles.halfBtn}
                         />
                         <PrimaryButton
-                            title="Submit →"
+                            title="SUBMIT →"
                             onPress={handleSubmit}
                             variant="danger"
                             style={styles.halfBtn}
                         />
-                    </Animated.View>
+                    </View>
 
                     <Text style={styles.previewDisclaimer}>
-                        Evidence will be encrypted and sent to RPF automatically.
+                        EVIDENCE ENCRYPTED AND GEOTAGGED BEFORE TRANSMISSION TO RPF.
                     </Text>
                 </Animated.View>
             )}
@@ -220,7 +213,7 @@ function CameraSheetBody({ category, onClose }: SheetBodyProps) {
             {/* ── SUBMITTING phase ── */}
             {phase === 'submitting' && (
                 <Animated.View entering={FadeIn.duration(200)} style={styles.submittingBox}>
-                    <PrimaryButton title="Submitting..." onPress={() => { }} loading variant="primary" />
+                    <PrimaryButton title="TRANSMITTING..." onPress={() => { }} loading variant="primary" />
                 </Animated.View>
             )}
         </View>
@@ -235,59 +228,60 @@ export default function EvidenceScreen() {
 
     const handleClose = useCallback(() => {
         setActiveCategory(null);
-        setToastMsg(`Complaint Submitted Successfully  ·  Ref #${generateRef()}`);
+        setToastMsg(`COMPLAINT SUBMITTED · REF #${generateRef()}`);
     }, []);
 
     const handleCategoryPress = (cat: Category) => setActiveCategory(cat);
 
     return (
-        <SafeAreaView style={styles.safe} edges={['bottom']}>
+        <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
             <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
 
-            {/* Toast — rendered at screen level so it floats above everything */}
+            {/* Toast */}
             {toastMsg && (
                 <Toast message={toastMsg} onDone={() => setToastMsg(null)} />
             )}
 
+            {/* Top Bar */}
+            <View style={styles.topBar}>
+                <Text style={styles.topBarTitle}>EVIDENCE_MODULE</Text>
+                <Text style={styles.topBarSub}>CAPTURE + SUBMIT</Text>
+            </View>
+
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                {/* Header */}
-                <Animated.View entering={FadeInDown.delay(60).springify()} style={styles.header}>
-                    <Text style={styles.headerTitle}>Evidence Complaint</Text>
-                    <Text style={styles.headerSub}>
-                        Select an incident type, capture photo evidence, and submit directly to RPF.
+                {/* Header Info */}
+                <View style={styles.headerInfo}>
+                    <Text style={styles.mainHeading}>EVIDENCE_COMPLAINT</Text>
+                    <Text style={styles.subHeading}>
+                        SELECT INCIDENT TYPE. CAPTURE PHOTO EVIDENCE.{"\n"}SUBMIT DIRECTLY TO RPF CONTROL.
                     </Text>
-                </Animated.View>
+                </View>
 
                 {/* 2×2 Grid */}
                 <View style={styles.grid}>
-                    {CATEGORIES.map((cat, i) => (
-                        <Animated.View
+                    {CATEGORIES.map((cat) => (
+                        <TouchableOpacity
                             key={cat.id}
-                            entering={FadeInDown.delay(100 + i * 80).springify()}
-                            style={styles.cardWrapper}
+                            style={styles.card}
+                            onPress={() => handleCategoryPress(cat)}
+                            activeOpacity={0.85}
                         >
-                            <TouchableOpacity
-                                style={[styles.card, { borderTopColor: cat.color }]}
-                                onPress={() => handleCategoryPress(cat)}
-                                activeOpacity={0.75}
-                            >
-                                <View style={[styles.cardIconCircle, { backgroundColor: `${cat.color}20` }]}>
-                                    <Text style={styles.cardIcon}>{cat.icon}</Text>
-                                </View>
-                                <Text style={styles.cardLabel}>{cat.label}</Text>
-                                <Text style={styles.cardCta}>Tap to file →</Text>
-                            </TouchableOpacity>
-                        </Animated.View>
+                            <View style={[styles.cardAccent, { backgroundColor: cat.color }]} />
+                            <View style={styles.cardBody}>
+                                <Text style={styles.cardIcon}>{cat.icon}</Text>
+                                <Text style={styles.cardLabel}>{cat.label.toUpperCase()}</Text>
+                                <Text style={styles.cardCta}>FILE_COMPLAINT ▶</Text>
+                            </View>
+                        </TouchableOpacity>
                     ))}
                 </View>
 
                 {/* Info strip */}
-                <Animated.View entering={FadeInDown.delay(460).springify()} style={styles.infoBox}>
-                    <Text style={styles.infoIcon}>🔒</Text>
+                <View style={styles.infoBox}>
                     <Text style={styles.infoText}>
-                        All evidence is encrypted and geotagged before being forwarded to RPF.
+                        🔒 ALL EVIDENCE IS ENCRYPTED AND GEOTAGGED BEFORE FORWARDING TO RPF.
                     </Text>
-                </Animated.View>
+                </View>
             </ScrollView>
 
             {/* Bottom sheet modal */}
@@ -314,9 +308,8 @@ export default function EvidenceScreen() {
                         exiting={SlideOutDown.duration(220)}
                         style={styles.sheet}
                     >
-                        <View style={styles.handle} />
                         <View style={styles.sheetHeader}>
-                            <Text style={styles.sheetTitle}>Capture Evidence</Text>
+                            <Text style={styles.sheetTitle}>CAPTURE_EVIDENCE</Text>
                             <TouchableOpacity onPress={() => setActiveCategory(null)} style={styles.closeBtn}>
                                 <Text style={styles.closeBtnText}>✕</Text>
                             </TouchableOpacity>
@@ -337,145 +330,221 @@ export default function EvidenceScreen() {
 
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: COLORS.bg },
-    content: { padding: SPACING.lg, paddingBottom: 48 },
 
-    // Header
-    header: { marginBottom: SPACING.xl },
-    headerTitle: { color: COLORS.white, fontSize: 26, fontWeight: '800', marginBottom: SPACING.sm },
-    headerSub: { color: COLORS.muted, fontSize: 14, lineHeight: 21 },
+    topBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.sm,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+        backgroundColor: COLORS.surface,
+    },
+    topBarTitle: { color: COLORS.white, fontSize: 14, fontWeight: '900', letterSpacing: 1 },
+    topBarSub: { color: COLORS.muted, fontSize: 10, fontWeight: '700' },
+
+    content: { padding: SPACING.md, paddingBottom: 48 },
+
+    headerInfo: { marginBottom: SPACING.xl },
+    mainHeading: {
+        color: COLORS.white,
+        fontSize: 28,
+        fontWeight: '900',
+        letterSpacing: -0.5,
+    },
+    subHeading: {
+        color: COLORS.muted,
+        fontSize: 11,
+        fontWeight: '600',
+        lineHeight: 17,
+        marginTop: 4,
+    },
 
     // Grid
-    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, marginBottom: SPACING.lg },
-    cardWrapper: { width: '47%', borderRadius: RADIUS.lg, ...SHADOW.card },
+    grid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: SPACING.md,
+        marginBottom: SPACING.lg,
+    },
     card: {
+        width: '47%',
         backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.lg,
-        padding: SPACING.lg,
-        borderTopWidth: 3,
+        borderWidth: 1,
         borderColor: COLORS.border,
-        minHeight: 155,
+        minHeight: 140,
+        overflow: 'hidden',
     },
-    cardIconCircle: {
-        width: 48, height: 48, borderRadius: 24,
-        alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md,
+    cardAccent: { height: 4 },
+    cardBody: { padding: SPACING.md },
+    cardIcon: { fontSize: 28, marginBottom: SPACING.sm },
+    cardLabel: {
+        color: COLORS.white,
+        fontSize: 13,
+        fontWeight: '900',
+        marginBottom: 6,
     },
-    cardIcon: { fontSize: 22 },
-    cardLabel: { color: COLORS.white, fontSize: 14, fontWeight: '700', marginBottom: 6 },
-    cardCta: { color: COLORS.muted, fontSize: 12 },
+    cardCta: {
+        color: COLORS.muted,
+        fontSize: 10,
+        fontWeight: '700',
+    },
 
     // Info
     infoBox: {
-        flexDirection: 'row', gap: 10, alignItems: 'flex-start',
         backgroundColor: `${COLORS.primary}18`,
-        borderWidth: 1, borderColor: `${COLORS.primary}44`,
-        borderRadius: RADIUS.md, padding: SPACING.md,
+        borderWidth: 1,
+        borderColor: `${COLORS.primary}44`,
+        padding: SPACING.md,
+        borderLeftWidth: 4,
+        borderLeftColor: COLORS.primary,
     },
-    infoIcon: { fontSize: 14 },
-    infoText: { color: COLORS.muted, fontSize: 12, lineHeight: 18, flex: 1 },
+    infoText: { color: COLORS.muted, fontSize: 11, lineHeight: 17, fontWeight: '700' },
 
     // Modal
-    backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.72)' },
+    backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.82)' },
     sheet: {
-        position: 'absolute', bottom: 0, left: 0, right: 0,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
         backgroundColor: COLORS.surface,
-        borderTopLeftRadius: 24, borderTopRightRadius: 24,
-        borderTopWidth: 1, borderColor: COLORS.border,
-        paddingHorizontal: SPACING.lg, paddingBottom: 36, paddingTop: SPACING.sm,
-    },
-    handle: {
-        alignSelf: 'center', width: 40, height: 4,
-        borderRadius: 2, backgroundColor: COLORS.border, marginBottom: SPACING.sm,
+        borderTopWidth: 2,
+        borderColor: COLORS.border,
+        paddingHorizontal: SPACING.md,
+        paddingBottom: 36,
+        paddingTop: SPACING.md,
     },
     sheetHeader: {
-        flexDirection: 'row', justifyContent: 'space-between',
-        alignItems: 'center', marginBottom: SPACING.md,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: SPACING.md,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+        paddingBottom: SPACING.sm,
     },
-    sheetTitle: { color: COLORS.white, fontSize: 17, fontWeight: '700' },
+    sheetTitle: { color: COLORS.white, fontSize: 14, fontWeight: '900', letterSpacing: 1 },
     closeBtn: {
-        width: 30, height: 30, borderRadius: 15,
-        backgroundColor: COLORS.border, alignItems: 'center', justifyContent: 'center',
+        width: 32,
+        height: 32,
+        backgroundColor: COLORS.border,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    closeBtnText: { color: COLORS.muted, fontSize: 13, fontWeight: '700' },
+    closeBtnText: { color: COLORS.white, fontSize: 14, fontWeight: '900' },
 
     // Sheet body
     sheetBody: { gap: SPACING.md },
-    catChip: {
-        flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
-        gap: 8, borderWidth: 1, borderRadius: 20,
-        paddingVertical: 6, paddingHorizontal: 14,
+    catTag: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        borderLeftWidth: 4,
+        paddingLeft: SPACING.sm,
+        paddingVertical: 4,
     },
-    catChipIcon: { fontSize: 15 },
-    catChipText: { fontSize: 13, fontWeight: '700' },
+    catTagIcon: { fontSize: 15 },
+    catTagText: { fontSize: 12, fontWeight: '900', color: COLORS.white },
 
     // Camera
     cameraWrap: { gap: SPACING.md },
-    camera: { height: 280, borderRadius: RADIUS.lg, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border },
+    camera: {
+        height: 280,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
     bracket: { position: 'absolute', width: 24, height: 24, borderColor: COLORS.white },
-    topLeft: { top: 12, left: 12, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 4 },
-    topRight: { top: 12, right: 12, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 4 },
-    bottomLeft: { bottom: 12, left: 12, borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: 4 },
-    bottomRight: { bottom: 12, right: 12, borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: 4 },
+    topLeft: { top: 12, left: 12, borderTopWidth: 2, borderLeftWidth: 2 },
+    topRight: { top: 12, right: 12, borderTopWidth: 2, borderRightWidth: 2 },
+    bottomLeft: { bottom: 12, left: 12, borderBottomWidth: 2, borderLeftWidth: 2 },
+    bottomRight: { bottom: 12, right: 12, borderBottomWidth: 2, borderRightWidth: 2 },
     captureFlash: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.35)' },
 
     captureRow: { alignItems: 'center', gap: SPACING.sm },
-    cameraHint: { color: COLORS.muted, fontSize: 12 },
+    cameraHint: { color: COLORS.muted, fontSize: 10, fontWeight: '800' },
     captureBtn: {
-        width: 68, height: 68, borderRadius: 34,
-        borderWidth: 3, borderColor: COLORS.white,
-        alignItems: 'center', justifyContent: 'center', ...SHADOW.card,
+        width: 68,
+        height: 68,
+        borderRadius: 34,
+        borderWidth: 3,
+        borderColor: COLORS.white,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     captureInner: { width: 52, height: 52, borderRadius: 26, backgroundColor: COLORS.white },
 
     // Preview
     previewSection: { gap: SPACING.md },
     previewWrap: {
-        height: 260, borderRadius: RADIUS.lg, overflow: 'hidden',
-        borderWidth: 1, borderColor: COLORS.border, position: 'relative',
+        height: 260,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        position: 'relative',
     },
     previewImage: { width: '100%', height: '100%' },
     previewPlaceholder: {
-        backgroundColor: COLORS.bg, alignItems: 'center', justifyContent: 'center', gap: 8,
+        backgroundColor: COLORS.bg,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
     },
     previewPlaceholderIcon: { fontSize: 40 },
-    previewPlaceholderText: { color: COLORS.muted, fontSize: 14 },
+    previewPlaceholderText: { color: COLORS.muted, fontSize: 12, fontWeight: '800' },
 
     capturedBadge: {
-        position: 'absolute', bottom: 10, left: 10,
-        backgroundColor: `${COLORS.success}EE`,
-        borderRadius: 20, paddingVertical: 5, paddingHorizontal: 14,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        backgroundColor: COLORS.success,
+        paddingVertical: 6,
+        paddingHorizontal: 14,
     },
-    capturedBadgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+    capturedBadgeText: { color: '#000', fontSize: 11, fontWeight: '900' },
 
     previewBtns: { flexDirection: 'row', gap: SPACING.sm },
     halfBtn: { flex: 1 },
-    previewDisclaimer: { color: COLORS.muted, fontSize: 11, textAlign: 'center' },
+    previewDisclaimer: {
+        color: COLORS.muted,
+        fontSize: 10,
+        textAlign: 'center',
+        fontWeight: '700',
+    },
 
     submittingBox: { marginTop: SPACING.sm },
 
     // Permission
     permBox: { alignItems: 'center', padding: SPACING.lg },
     permIcon: { fontSize: 48, marginBottom: SPACING.md },
-    permTitle: { color: COLORS.white, fontSize: 18, fontWeight: '700', marginBottom: SPACING.sm },
-    permSub: { color: COLORS.muted, fontSize: 13, textAlign: 'center' },
-    permCancel: { marginTop: SPACING.lg },
-    permCancelText: { color: COLORS.muted, fontSize: 14 },
+    permTitle: { color: COLORS.white, fontSize: 16, fontWeight: '900', marginBottom: SPACING.sm },
+    permSub: { color: COLORS.muted, fontSize: 11, textAlign: 'center', fontWeight: '700' },
+    permBtn: {
+        backgroundColor: COLORS.primary,
+        paddingVertical: 14,
+        paddingHorizontal: 32,
+        marginTop: SPACING.lg,
+    },
+    permBtnText: { color: COLORS.white, fontSize: 13, fontWeight: '900' },
+    permCancel: { marginTop: SPACING.md },
+    permCancelText: { color: COLORS.muted, fontSize: 12, fontWeight: '700' },
 
-    // Toast — floats at top of screen
+    // Toast
     toast: {
         position: 'absolute',
         top: 52,
-        left: SPACING.lg,
-        right: SPACING.lg,
+        left: SPACING.md,
+        right: SPACING.md,
         zIndex: 999,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
         backgroundColor: COLORS.success,
-        borderRadius: RADIUS.lg,
         paddingVertical: 14,
-        paddingHorizontal: SPACING.lg,
-        ...SHADOW.card,
+        paddingHorizontal: SPACING.md,
     },
-    toastDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
-    toastText: { color: '#fff', fontSize: 13, fontWeight: '700', flex: 1 },
+    toastDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#000' },
+    toastText: { color: '#000', fontSize: 12, fontWeight: '900', flex: 1 },
 });

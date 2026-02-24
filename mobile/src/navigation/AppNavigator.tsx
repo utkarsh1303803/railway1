@@ -25,15 +25,18 @@ export default function AppNavigator() {
                 screenOptions={{
                     headerStyle: {
                         backgroundColor: COLORS.surface,
-                        borderBottomWidth: 1,
+                        borderBottomWidth: 2,
                         borderBottomColor: COLORS.border,
+                        elevation: 0,
+                        shadowOpacity: 0,
                     } as any,
                     headerTintColor: COLORS.white,
                     headerTitleStyle: {
-                        fontWeight: '700',
-                        fontSize: 18,
-                        letterSpacing: 0.5,
-                    },
+                        fontWeight: '900',
+                        fontSize: 14,
+                        letterSpacing: 2,
+                        textTransform: 'uppercase',
+                    } as any,
                     cardStyle: { backgroundColor: COLORS.bg },
                     headerBackTitleVisible: false,
                 }}
@@ -41,22 +44,22 @@ export default function AppNavigator() {
                 <Stack.Screen
                     name="Home"
                     component={HomeScreen}
-                    options={{ title: 'RailRakshak' }}
+                    options={{ headerShown: false }}
                 />
                 <Stack.Screen
                     name="SOS"
                     component={SosScreen}
-                    options={{ title: 'Manual SOS' }}
+                    options={{ headerShown: false }}
                 />
                 <Stack.Screen
                     name="Evidence"
                     component={EvidenceScreen}
-                    options={{ title: 'Evidence Complaint' }}
+                    options={{ headerShown: false }}
                 />
                 <Stack.Screen
                     name="QRResolver"
                     component={QRResolverScreen}
-                    options={{ title: 'Seat QR Resolver' }}
+                    options={{ headerShown: false }}
                 />
             </Stack.Navigator>
         </NavigationContainer>

@@ -8,7 +8,7 @@ import {
     Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
+import { Camera, BarCodeScanningResult } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import Animated, {
     FadeInDown,
@@ -22,7 +22,7 @@ import Animated, {
     withSpring,
     Easing,
 } from 'react-native-reanimated';
-import { COLORS, SPACING, RADIUS, SHADOW } from '../constants/theme';
+import { COLORS, SPACING } from '../constants/theme';
 import PrimaryButton from '../components/PrimaryButton';
 
 const { width: SW } = Dimensions.get('window');
@@ -56,12 +56,11 @@ function ScanBorder() {
 
     const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
-    // Four corner brackets
     const corners = [
-        { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: RADIUS.md },
-        { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: RADIUS.md },
-        { bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: RADIUS.md },
-        { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: RADIUS.md },
+        { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3 },
+        { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3 },
+        { bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3 },
+        { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3 },
     ];
 
     return (
@@ -141,7 +140,6 @@ function ResultCard({ result, data, onRescan }: ResultCardProps) {
     useEffect(() => {
         scale.value = withSpring(1, { damping: 14, stiffness: 240 });
 
-        // Play haptic feedback on result
         if (isVerified) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } else {
@@ -158,85 +156,71 @@ function ResultCard({ result, data, onRescan }: ResultCardProps) {
             entering={FadeIn.duration(300)}
             style={styles.resultOverlay}
         >
-            <Animated.View style={[styles.resultCard, { borderColor: `${color}55` }, cardStyle]}>
+            <Animated.View style={[styles.resultCard, { borderColor: color }, cardStyle]}>
 
                 {/* TTE Banner for conflict */}
                 {!isVerified && <TteAlertBanner />}
 
-                {/* Status icon */}
-                <Animated.View
-                    entering={ZoomIn.springify().damping(14).stiffness(260)}
-                    style={[styles.resultIconCircle, { backgroundColor: `${color}20`, borderColor: color }]}
-                >
-                    <Text style={styles.resultIcon}>{isVerified ? '✓' : '✕'}</Text>
-                </Animated.View>
+                {/* Status Header */}
+                <View style={[styles.resultHeader, { backgroundColor: color }]}>
+                    <Text style={styles.resultHeaderIcon}>{isVerified ? '✓' : '✕'}</Text>
+                    <Text style={styles.resultHeaderText}>
+                        {isVerified ? 'VERIFIED' : 'CONFLICT'}
+                    </Text>
+                </View>
 
-                {/* Status label */}
-                <Animated.Text
-                    entering={FadeInDown.delay(150).springify()}
-                    style={[styles.resultStatus, { color }]}
-                >
-                    {isVerified ? 'VERIFIED' : 'CONFLICT'}
-                </Animated.Text>
+                <View style={styles.resultBody}>
+                    {/* Status indicator */}
+                    <View style={styles.resultStatusRow}>
+                        <View style={[styles.resultStatusDot, { backgroundColor: color }]} />
+                        <Text style={[styles.resultStatusLabel, { color }]}>
+                            {isVerified ? 'PASSENGER IDENTITY CONFIRMED' : 'SEAT DISPUTE RAISED'}
+                        </Text>
+                    </View>
 
-                {/* Sub label */}
-                <Animated.Text
-                    entering={FadeInDown.delay(210).springify()}
-                    style={styles.resultSubLabel}
-                >
-                    {isVerified
-                        ? 'Passenger identity confirmed'
-                        : 'Seat dispute raised'}
-                </Animated.Text>
+                    {/* Detail rows */}
+                    <View style={styles.dataGrid}>
+                        {[
+                            { label: 'SEAT', value: data.seat },
+                            { label: 'NAME', value: data.name },
+                            { label: 'PNR', value: data.pnr ?? 'UNAVAILABLE' },
+                            { label: 'TRAIN', value: data.train ?? 'RAJDHANI EXPRESS' },
+                            { label: 'STATUS', value: isVerified ? 'CONFIRMED' : 'UNDER DISPUTE' },
+                        ].map((row, i, arr) => (
+                            <View key={row.label} style={[styles.gridRow, i < arr.length - 1 && styles.gridBorder]}>
+                                <Text style={styles.gridLabel}>{row.label}</Text>
+                                <Text
+                                    style={[
+                                        styles.gridValue,
+                                        row.label === 'STATUS' && { color },
+                                    ]}
+                                >
+                                    {row.value}
+                                </Text>
+                            </View>
+                        ))}
+                    </View>
 
-                {/* Detail rows */}
-                <Animated.View
-                    entering={FadeInDown.delay(280).springify()}
-                    style={styles.detailCard}
-                >
-                    {[
-                        { label: 'Seat', value: data.seat },
-                        { label: 'Name', value: data.name },
-                        { label: 'PNR', value: data.pnr ?? 'Unavailable' },
-                        { label: 'Train', value: data.train ?? 'Rajdhani Express' },
-                        { label: 'Status', value: isVerified ? 'Seat Confirmed ✓' : 'Under Dispute ⚠' },
-                    ].map((row, i, arr) => (
-                        <View key={row.label} style={[styles.detailRow, i < arr.length - 1 && styles.detailBorder]}>
-                            <Text style={styles.detailLabel}>{row.label}</Text>
-                            <Text
-                                style={[
-                                    styles.detailValue,
-                                    row.label === 'Status' && { color },
-                                ]}
-                            >
-                                {row.value}
+                    {/* Conflict notice */}
+                    {!isVerified && (
+                        <View style={styles.conflictNotice}>
+                            <Text style={styles.conflictNoticeText}>
+                                ⚠ RPF AND ON-BOARD TTE HAVE BEEN SILENTLY NOTIFIED ABOUT THIS SEAT CONFLICT.
                             </Text>
                         </View>
-                    ))}
-                </Animated.View>
+                    )}
 
-                {/* Conflict notice */}
-                {!isVerified && (
-                    <Animated.View
-                        entering={FadeInDown.delay(360).springify()}
-                        style={styles.conflictNotice}
-                    >
-                        <Text style={styles.conflictNoticeIcon}>⚠️</Text>
-                        <Text style={styles.conflictNoticeText}>
-                            RPF and on-board TTE have been silently notified about this seat conflict.
-                        </Text>
-                    </Animated.View>
-                )}
-
-                {/* Rescan button */}
-                <Animated.View entering={FadeInDown.delay(420).springify()} style={{ width: '100%' }}>
-                    <PrimaryButton
-                        title="↩  Scan Another Seat"
+                    {/* Rescan button */}
+                    <TouchableOpacity
+                        style={[styles.rescanBtn, { borderColor: color }]}
                         onPress={onRescan}
-                        variant={isVerified ? 'primary' : 'danger'}
-                        style={{ marginTop: SPACING.sm }}
-                    />
-                </Animated.View>
+                        activeOpacity={0.85}
+                    >
+                        <Text style={[styles.rescanBtnText, { color }]}>
+                            ↩ SCAN_ANOTHER_SEAT
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </Animated.View>
         </Animated.View>
     );
@@ -245,16 +229,15 @@ function ResultCard({ result, data, onRescan }: ResultCardProps) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function QRResolverScreen() {
-    const [permission, requestPermission] = useCameraPermissions();
+    const [permission, requestPermission] = Camera.useCameraPermissions();
     const [scanned, setScanned] = useState(false);
     const [qrData, setQrData] = useState<QRData | null>(null);
     const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
 
-    const handleBarCodeScanned = ({ data }: BarcodeScanningResult) => {
+    const handleBarCodeScanned = ({ data }: BarCodeScanningResult) => {
         if (scanned) return;
         setScanned(true);
 
-        // Try to parse QR, fall back to dummy
         let parsed: QRData;
         try {
             parsed = JSON.parse(data);
@@ -268,7 +251,6 @@ export default function QRResolverScreen() {
         }
 
         setQrData(parsed);
-        // Simulate 70% verified, 30% conflict
         setVerifyResult(Math.random() < 0.7 ? 'verified' : 'conflict');
     };
 
@@ -282,9 +264,9 @@ export default function QRResolverScreen() {
 
     if (!permission) {
         return (
-            <SafeAreaView style={styles.safe} edges={['bottom']}>
+            <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
                 <View style={styles.centered}>
-                    <Text style={styles.permText}>Requesting camera permission…</Text>
+                    <Text style={styles.permText}>REQUESTING CAMERA PERMISSION…</Text>
                 </View>
             </SafeAreaView>
         );
@@ -292,18 +274,18 @@ export default function QRResolverScreen() {
 
     if (!permission.granted) {
         return (
-            <SafeAreaView style={styles.safe} edges={['bottom']}>
+            <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
                 <View style={styles.centered}>
                     <Text style={styles.permIcon}>📷</Text>
-                    <Text style={styles.permTitle}>Camera Access Required</Text>
+                    <Text style={styles.permTitle}>CAMERA ACCESS REQUIRED</Text>
                     <Text style={styles.permSub}>
-                        Enable camera permission to scan QR codes.
+                        ENABLE CAMERA PERMISSION TO SCAN QR CODES.
                     </Text>
                     <TouchableOpacity
                         style={styles.permButton}
                         onPress={requestPermission}
                     >
-                        <Text style={styles.permButtonText}>Grant Permission</Text>
+                        <Text style={styles.permButtonText}>GRANT_PERMISSION</Text>
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
@@ -313,25 +295,31 @@ export default function QRResolverScreen() {
     // ── Main UI ──────────────────────────────────────────────────────────────
 
     return (
-        <SafeAreaView style={styles.safe} edges={['bottom']}>
+        <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
             <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
 
+            {/* Top Bar */}
+            <View style={styles.topBar}>
+                <Text style={styles.topBarTitle}>QR_VERIFICATION</Text>
+                <Text style={styles.topBarSub}>SEAT RESOLVER</Text>
+            </View>
+
             {/* Header */}
-            <Animated.View entering={FadeInDown.delay(60).springify()} style={styles.header}>
-                <Text style={styles.headerTitle}>Seat Verification</Text>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>SEAT_VERIFICATION</Text>
                 <Text style={styles.headerSub}>
-                    Scan the QR code printed on the seat / berth to verify passenger details.
+                    SCAN QR CODE ON SEAT/BERTH TO VERIFY PASSENGER DETAILS.
                 </Text>
-            </Animated.View>
+            </View>
 
             {/* Camera + scan box */}
             <View style={styles.cameraContainer}>
-                <CameraView
+                <Camera
                     style={StyleSheet.absoluteFillObject}
-                    barcodeScannerSettings={{
-                        barcodeTypes: ["qr"],
+                    barCodeScannerSettings={{
+                        barCodeTypes: ['qr'],
                     }}
-                    onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+                    onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
                 />
 
                 {/* Dark overlay with transparent scan window */}
@@ -350,20 +338,19 @@ export default function QRResolverScreen() {
                 <View style={styles.overlayBottom} />
 
                 {/* Hint below scan box */}
-                <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.scanHint}>
+                <View style={styles.scanHint}>
                     <Text style={styles.scanHintText}>
-                        {scanned ? '✓ QR detected — processing…' : 'Align QR code within the frame'}
+                        {scanned ? '✓ QR DETECTED — PROCESSING…' : 'ALIGN QR CODE WITHIN FRAME'}
                     </Text>
-                </Animated.View>
+                </View>
             </View>
 
-            {/* Quick info strip */}
-            <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.infoStrip}>
-                <Text style={styles.infoStripIcon}>🔒</Text>
+            {/* Info strip */}
+            <View style={styles.infoStrip}>
                 <Text style={styles.infoStripText}>
-                    Verification cross-checks PNR with Indian Railways database.
+                    🔒 VERIFICATION CROSS-CHECKS PNR WITH INDIAN RAILWAYS DATABASE.
                 </Text>
-            </Animated.View>
+            </View>
 
             {/* Result overlay */}
             {qrData && verifyResult && (
@@ -384,27 +371,39 @@ const OVERLAY_COLOR = 'rgba(10,25,47,0.82)';
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: COLORS.bg },
 
+    topBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.sm,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+        backgroundColor: COLORS.surface,
+    },
+    topBarTitle: { color: COLORS.white, fontSize: 14, fontWeight: '900', letterSpacing: 1 },
+    topBarSub: { color: COLORS.muted, fontSize: 10, fontWeight: '700' },
+
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: SPACING.xl },
-    permText: { color: COLORS.muted, fontSize: 15 },
+    permText: { color: COLORS.muted, fontSize: 13, fontWeight: '800' },
     permIcon: { fontSize: 52, marginBottom: SPACING.md },
-    permTitle: { color: COLORS.white, fontSize: 20, fontWeight: '700', marginBottom: SPACING.sm },
-    permSub: { color: COLORS.muted, fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: SPACING.lg },
+    permTitle: { color: COLORS.white, fontSize: 18, fontWeight: '900', marginBottom: SPACING.sm },
+    permSub: { color: COLORS.muted, fontSize: 12, textAlign: 'center', lineHeight: 20, marginBottom: SPACING.lg, fontWeight: '700' },
     permButton: {
         backgroundColor: COLORS.primary,
         paddingVertical: 14,
         paddingHorizontal: 32,
-        borderRadius: RADIUS.md,
     },
-    permButtonText: { color: COLORS.white, fontSize: 16, fontWeight: '700' },
+    permButtonText: { color: COLORS.white, fontSize: 14, fontWeight: '900' },
 
     // Header
     header: {
-        paddingHorizontal: SPACING.lg,
+        paddingHorizontal: SPACING.md,
         paddingTop: SPACING.md,
-        paddingBottom: SPACING.lg,
+        paddingBottom: SPACING.md,
     },
-    headerTitle: { color: COLORS.white, fontSize: 26, fontWeight: '800', marginBottom: 6 },
-    headerSub: { color: COLORS.muted, fontSize: 13, lineHeight: 20 },
+    headerTitle: { color: COLORS.white, fontSize: 22, fontWeight: '900', marginBottom: 4 },
+    headerSub: { color: COLORS.muted, fontSize: 11, lineHeight: 17, fontWeight: '600' },
 
     // Camera
     cameraContainer: { flex: 1, position: 'relative' },
@@ -422,7 +421,6 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
 
-    // Animated border corners (sized inside ScanBorder)
     corner: { position: 'absolute', width: 28, height: 28 },
 
     // Scan line
@@ -431,7 +429,6 @@ const styles = StyleSheet.create({
         left: 4,
         right: 4,
         height: 2,
-        borderRadius: 1,
         backgroundColor: COLORS.primary,
         opacity: 0.85,
     },
@@ -445,115 +442,122 @@ const styles = StyleSheet.create({
     },
     scanHintText: {
         color: COLORS.white,
-        fontSize: 13,
-        fontWeight: '600',
-        backgroundColor: 'rgba(11,61,145,0.75)',
+        fontSize: 11,
+        fontWeight: '900',
+        backgroundColor: 'rgba(11,61,145,0.85)',
         paddingVertical: 8,
         paddingHorizontal: 20,
-        borderRadius: 20,
         overflow: 'hidden',
     },
 
     // Info strip
     infoStrip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        margin: SPACING.lg,
+        margin: SPACING.md,
         backgroundColor: `${COLORS.primary}18`,
         borderWidth: 1,
         borderColor: `${COLORS.primary}44`,
-        borderRadius: RADIUS.md,
         padding: SPACING.md,
+        borderLeftWidth: 4,
+        borderLeftColor: COLORS.primary,
     },
-    infoStripIcon: { fontSize: 14 },
-    infoStripText: { color: COLORS.muted, fontSize: 12, lineHeight: 18, flex: 1 },
+    infoStripText: { color: COLORS.muted, fontSize: 10, lineHeight: 16, fontWeight: '700' },
 
     // Result overlay
     resultOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: `${COLORS.bg}EE`,
-        alignItems: 'center',
+        backgroundColor: 'rgba(10, 25, 47, 0.98)',
         justifyContent: 'center',
         padding: SPACING.lg,
     },
     resultCard: {
-        width: '100%',
         backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.xl,
-        padding: SPACING.xl,
-        alignItems: 'center',
-        borderWidth: 1,
-        ...SHADOW.card,
-    },
-    resultIconCircle: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
         borderWidth: 2,
+        overflow: 'hidden',
+    },
+    resultHeader: {
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: SPACING.md,
+        gap: 8,
+        padding: SPACING.md,
     },
-    resultIcon: { fontSize: 34, fontWeight: '800', color: COLORS.white },
-    resultStatus: {
+    resultHeaderIcon: {
         fontSize: 22,
         fontWeight: '900',
-        letterSpacing: 2,
-        marginBottom: 6,
+        color: '#000',
     },
-    resultSubLabel: {
-        color: COLORS.muted,
-        fontSize: 13,
-        textAlign: 'center',
+    resultHeaderText: {
+        fontSize: 20,
+        fontWeight: '900',
+        color: '#000',
+        letterSpacing: 2,
+    },
+    resultBody: {
+        padding: SPACING.lg,
+    },
+    resultStatusRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
         marginBottom: SPACING.lg,
     },
-
-    detailCard: {
-        width: '100%',
-        backgroundColor: COLORS.bg,
-        borderRadius: RADIUS.md,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        marginBottom: SPACING.md,
+    resultStatusDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
     },
-    detailRow: {
+    resultStatusLabel: {
+        fontSize: 11,
+        fontWeight: '900',
+    },
+
+    dataGrid: {
+        marginBottom: SPACING.lg,
+    },
+    gridRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingVertical: 11,
-        paddingHorizontal: SPACING.md,
+        paddingVertical: 10,
+        paddingHorizontal: SPACING.sm,
     },
-    detailBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
-    detailLabel: { color: COLORS.muted, fontSize: 13 },
-    detailValue: { color: COLORS.white, fontSize: 13, fontWeight: '700' },
+    gridBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    gridLabel: { color: COLORS.muted, fontSize: 11, fontWeight: '700' },
+    gridValue: { color: COLORS.white, fontSize: 12, fontWeight: '800' },
 
     conflictNotice: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 8,
-        backgroundColor: `${COLORS.accent}14`,
+        backgroundColor: `${COLORS.accent}18`,
         borderWidth: 1,
-        borderColor: `${COLORS.accent}55`,
-        borderRadius: RADIUS.md,
+        borderColor: COLORS.accent,
+        borderLeftWidth: 4,
+        borderLeftColor: COLORS.accent,
         padding: SPACING.md,
-        marginBottom: SPACING.sm,
-        width: '100%',
+        marginBottom: SPACING.md,
     },
-    conflictNoticeIcon: { fontSize: 14 },
-    conflictNoticeText: { color: COLORS.accent, fontSize: 12, lineHeight: 18, flex: 1 },
+    conflictNoticeText: { color: COLORS.accent, fontSize: 11, lineHeight: 17, fontWeight: '800' },
+
+    rescanBtn: {
+        borderWidth: 2,
+        paddingVertical: 16,
+        alignItems: 'center',
+    },
+    rescanBtnText: {
+        fontSize: 14,
+        fontWeight: '900',
+        letterSpacing: 1,
+    },
 
     tteBanner: {
         backgroundColor: COLORS.accent,
         paddingVertical: 8,
         paddingHorizontal: 20,
-        borderRadius: 20,
-        marginBottom: SPACING.lg,
-        ...SHADOW.alert,
+        alignSelf: 'center',
+        marginBottom: SPACING.md,
+        marginTop: SPACING.md,
     },
     tteBannerText: {
         color: 'white',
         fontWeight: '900',
-        fontSize: 14,
+        fontSize: 13,
         letterSpacing: 1,
     },
 });
