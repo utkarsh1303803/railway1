@@ -1,0 +1,59 @@
+{
+    "expo": {
+        "name": "RailRakshak",
+        "slug": "railrakshak",
+        "version": "1.0.0",
+        "sdkVersion": "50.0.0",
+        "orientation": "portrait",
+        "userInterfaceStyle": "dark",
+        "splash": {
+            "backgroundColor": "#0A192F"
+        },
+        "assetBundlePatterns": [
+            "**/*"
+        ],
+        "ios": {
+            "supportsTablet": false,
+            "bundleIdentifier": "com.railrakshak.app",
+            "infoPlist": {
+                "NSCameraUsageDescription": "Camera needed for evidence complaints and QR scanning",
+                "NSPhotoLibraryUsageDescription": "Photo library needed for attaching evidence",
+                "NSLocationWhenInUseUsageDescription": "Location needed for geotagging SOS alerts"
+            }
+        },
+        "android": {
+            "package": "com.railrakshak.app",
+            "permissions": [
+                "CAMERA",
+                "ACCESS_FINE_LOCATION",
+                "ACCESS_COARSE_LOCATION",
+                "READ_EXTERNAL_STORAGE",
+                "WRITE_EXTERNAL_STORAGE",
+                "READ_MEDIA_IMAGES",
+                "READ_MEDIA_VIDEO"
+            ]
+        },
+        "plugins": [
+            [
+                "expo-camera",
+                {
+                    "cameraPermission": "Allow RailRakshak to access your camera"
+                }
+            ],
+            [
+                "expo-media-library",
+                {
+                    "photosPermission": "Allow RailRakshak to access your photos",
+                    "savePhotosPermission": "Allow RailRakshak to save photos",
+                    "isAccessMediaLocationEnabled": true
+                }
+            ],
+            [
+                "expo-location",
+                {
+                    "locationWhenInUsePermission": "Allow RailRakshak to access your location for geotagging alerts"
+                }
+            ]
+        ]
+    }
+}
